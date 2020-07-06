@@ -118,6 +118,8 @@ class PredictCard:
                 design_object["data"] = f'data:image/png;base64,{base64_string}'
                 img_width, img_height = cropped.size
 
+                # set the closest size label for the image object's width and
+                # height
                 size = "Auto"
                 keys = list(default_host_configs.IMAGE_SIZE.keys())
                 width_key = min(keys, key=lambda x: abs(x - img_width))
