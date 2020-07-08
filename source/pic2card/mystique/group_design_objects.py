@@ -1,3 +1,4 @@
+"""Module for grouping deisgn objects into different containers"""
 from typing import List, Dict, Callable
 from operator import itemgetter
 
@@ -9,7 +10,8 @@ class GroupObjects:
     """
 
     def object_grouping(self, design_objects: List[Dict],
-                        condition: Callable[[Dict, Dict], bool]):
+                        condition: Callable[[Dict, Dict],
+                                            bool]) -> List[List[Dict]]:
         """
         Groups the given List of design objects for the any given condition.
         @param design_objects: objects
@@ -61,10 +63,16 @@ class ImageGrouping(GroupObjects):
     individual image objects.
     """
 
+    # Image objects within the 10px ymin range and 100px range difference are
+    # grouped into imagesets.
+    IMAGE_SET_YMIN_RANGE = 10.0
+    IMAGE_SET_X_RANGE = 100.0
+
     def __init__(self, card_arrange):
         self.card_arrange = card_arrange
 
-    def imageset_condition(self, design_object1: Dict, design_object2: Dict):
+    def imageset_condition(self, design_object1: Dict,
+                           design_object2: Dict) -> bool:
         """
         Returns a condition boolean value for grouping image objects into
         imagesets
@@ -81,10 +89,11 @@ class ImageGrouping(GroupObjects):
             xmin = design_object1.get("xmin")
         ymin_diff = abs(design_object1.get("ymin") - design_object2.get("ymin"))
         x_diff = abs(xmax - xmin)
-        return ymin_diff <= 10 and x_diff <= 100
+        return (ymin_diff <= self.IMAGE_SET_YMIN_RANGE
+                and x_diff <= self.IMAGE_SET_X_RANGE)
 
     def group_image_objects(self, image_objects, body, objects, ymins=None,
-                            is_column=None):
+                            is_column=None) -> List[Dict]:
         """
         Groups the image objects into imagesets which are in
         closer ymin range.
@@ -133,14 +142,35 @@ class ImageGrouping(GroupObjects):
 
 class ColumnsGrouping(GroupObjects):
     """
-    Groups the radiobutton objects of the adaptive card objects into a choiceset
-    or individual radiobuttion objects.
+    Groups the design objects into different columns of a columnset
     """
+
+    # design objects inside each column-set are grouped into columns based on 2
+    # conditions on the axis difference:
+    # If both are non-image objects the objects should be within 25px of y range
+    #    [ymax- ymin ] and 100px of xmin range or vice versa .
+    # If any one is a image object then objects should be within the range of
+    #    100px in both x and y range
+    COLUMNS_ROW_DIFF_1 = 25.0
+    COLUMNS_ROW_DIFF_2 = 100.0
+
+    # design objects are grouped into a column-set based on 3 conditions:
+    # If y range between any objects are within 11px
+    # If ymax - ymin range between any objects are within 15px and x range
+    #    within 100px
+    # If there's a image object then the adjacent non image object should be
+    #   within the y ranges of the image object provided exception of 2 cases
+    #   where either one of the ymin range or ymax range can go beyond the
+    #   image range for the given set of design objects.[ Not both ]
+    COLUMNSET_YMIN_RANGE = 11
+    COLUMNSET_Y_RANGE = 15
+    COLUMNSET_X_RANGE = 100
 
     def __init__(self, card_arrange):
         self.card_arrange = card_arrange
 
-    def columns_condition(self, design_object1, design_object2):
+    def columns_condition(self, design_object1: Dict,
+                          design_object2: Dict) -> bool:
         """
         Returns a condition boolean value for grouping objects into
         columnsets
@@ -174,9 +204,10 @@ class ColumnsGrouping(GroupObjects):
             object_one = design_object1
             object_two = design_object2
         return (design_object1 != design_object2 and (
-                (abs(design_object1.get("ymin", 0) - design_object2.get("ymin",
-                                                                        0)) <= 11.0)
-                or (y_diff <= 15 and xmin_diff <= 100)
+                (abs(design_object1.get("ymin",0)
+                     - design_object2.get("ymin",0)) <= self.COLUMNSET_YMIN_RANGE)
+                or (y_diff <= self.COLUMNSET_Y_RANGE
+                    and xmin_diff <= self.COLUMNSET_X_RANGE)
                 or ((object_one and object_two) and (
                 (object_one.get("ymin") <= object_two.get(
                         "ymin") <= object_one.get("ymax") and object_one.get(
@@ -191,7 +222,8 @@ class ColumnsGrouping(GroupObjects):
                 "ymax") and object_two.get("ymax") >= object_one.get("ymin"))
         ))))
 
-    def columns_row_condition(self, design_object1: Dict, design_object2: Dict):
+    def columns_row_condition(self, design_object1: Dict,
+                              design_object2: Dict) -> bool:
         """
         Returns a condition boolean value for grouping columnset grouped objects
         into different columns.
@@ -209,18 +241,31 @@ class ColumnsGrouping(GroupObjects):
         y_diff = round(abs(ymin - ymax))
         xmin_diff = abs(design_object1.get("xmin") - design_object2.get("xmin"))
         return (design_object1 != design_object2 and (
-                (y_diff <= 25 and xmin_diff <= 100)
-                or (design_object1.get("object",
-                                       "") == "image" and y_diff <= 100 and xmin_diff <= 100)
-                or (y_diff <= 100 and xmin_diff <= 25)
-        ))
+                (y_diff <= self.COLUMNS_ROW_DIFF_1
+                 and xmin_diff <= self.COLUMNS_ROW_DIFF_2)
+                or (design_object1.get("object", "") == "image"
+                    and y_diff <= self.COLUMNS_ROW_DIFF_2
+                    and xmin_diff <= self.COLUMNS_ROW_DIFF_2)
+                or (y_diff <= self.COLUMNS_ROW_DIFF_2
+                    and xmin_diff <= self.COLUMNS_ROW_DIFF_1)))
 
 
 class ChoicesetGrouping(GroupObjects):
+    """
+        Groups the radiobutton objects of the adaptive card objects into a choiceset
+        or individual radiobuttion objects.
+    """
+    # The design objects are grouped in choicesets based on 2 conditions:
+    # If the radiobuttons are within the range of 10px of ymax - ymin
+    # If the radiobuttons are within the rnage of 30px of ymins.
+    CHOICESET_Y_RANGE = 10
+    CHOICESET_YMIN_RANGE = 30
+
     def __init__(self, card_arrange):
         self.card_arrange = card_arrange
 
-    def choiceset_condition(self, design_object1: Dict, design_object2: Dict):
+    def choiceset_condition(self, design_object1: Dict,
+                            design_object2: Dict) -> bool:
         """
         Returns a condition boolean value for grouping radio buttion objects into
         choiceset
@@ -239,9 +284,11 @@ class ChoicesetGrouping(GroupObjects):
             difference_in_y = float(
                     design_object1.get("ymax")) - design_object2_ymin
 
-        return abs(difference_in_y) <= 10 and difference_in_ymin <= 30
+        return (abs(difference_in_y) <= self.CHOICESET_Y_RANGE
+                and difference_in_ymin <= self.CHOICESET_YMIN_RANGE)
 
-    def group_choicesets(self, radiobutton_objects, body, ymins=None):
+    def group_choicesets(self, radiobutton_objects: Dict, body: List[Dict],
+                         ymins=None) -> None:
         """
         Groups the choice elements into choicesets based on
         the closer ymin range

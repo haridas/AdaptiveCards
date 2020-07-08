@@ -5,7 +5,7 @@ import os
 from typing import Dict, List, Tuple
 import base64
 import io
-from io import BytesIO
+
 
 import cv2
 from PIL import Image
@@ -13,11 +13,10 @@ import numpy as np
 import requests
 
 from mystique.arrange_card import CardArrange
-from mystique.extract_properties import ExtractProperties
 from mystique.image_extraction import ImageExtraction
 from mystique.card_template import DataBinding
 from mystique import config
-from mystique import default_host_configs
+from mystique.extract_properties import CollectProperties
 
 
 class PredictCard:
@@ -33,17 +32,21 @@ class PredictCard:
         """
         self.od_model = od_model
 
-    def collect_objects(self, output_dict=None, pil_image=None):
+    def collect_objects(self, output_dict=None, pil_image=None,
+                        category_index= None):
         """
         Returns the design elements from the faster rcnn model with its
         properties mapped
 
         @param output_dict: output dict from the object detection
+        @param category_index: category name and class id mapping from the
+                               object detection
+        @param pil_image: input PIL image
 
         @return: Collected json of the design objects
                  and list of detected object's coordinates
+
         """
-        extract_properties = ExtractProperties()
         boxes = output_dict["detection_boxes"]
         scores = output_dict["detection_scores"]
         classes = output_dict["detection_classes"]
@@ -52,81 +55,43 @@ class PredictCard:
         json_object = {}.fromkeys(["objects"], [])
         width, height = pil_image.size
         for i in range(r):
-            if scores[i] * 100 >= 90.0:
+            if scores[i] * 100 >= config.MODEL_CONFIDENCE:
                 object_json = dict().fromkeys(
                     ["object", "xmin", "ymin", "xmax", "ymax"], "")
-                object_json["object"] = config.ID_TO_LABEL.get(classes[i], None)
+                object_json["object"] = category_index[classes[i]].get("name")
                 if object_json["object"]:
-                    ymin = boxes[i][0] * height
-                    xmin = boxes[i][1] * width
-                    ymax = boxes[i][2] * height
-                    xmax = boxes[i][3] * width
-
-                    object_json["xmin"] = float(xmin)
-                    object_json["ymin"] = float(ymin)
-                    object_json["xmax"] = float(xmax)
-                    object_json["ymax"] = float(ymax)
-                    object_json["coords"] = ",".join([str(xmin),
-                                                      str(ymin), str(xmax),
-                                                      str(ymax)])
+                    ymin, xmin, ymax, xmax = boxes[i]
+                    xmin, ymin , xmax, ymax = (float(xmin*width),
+                                               float(ymin*height),
+                                               float(xmax*width),
+                                               float(ymax*height))
+                    object_json["xmin"] = xmin
+                    object_json["ymin"] = ymin
+                    object_json["xmax"] = xmax
+                    object_json["ymax"] = ymax
+                    object_json["coords"] = (xmin,ymin,xmax,ymax)
                     object_json["score"] = scores[i]
                     if object_json["object"] == "textbox":
                         detected_coords.append(
-                            (xmin - 5, ymin, xmax + 5, ymax))
+                            (xmin - config.TEXTBOX_PADDING, ymin,
+                             xmax + config.TEXTBOX_PADDING, ymax))
                     else:
                         detected_coords.append((xmin, ymin, xmax, ymax))
                     json_object["objects"].append(object_json)
         return json_object, detected_coords
 
-
-
-    def get_object_properties(self, design_objects: List[Dict], pil_image: Image):
+    def get_object_properties(self, design_objects: List[Dict],
+                              pil_image: Image) -> None:
         """
         Extract each design object's properties.
 
         @param design_objects: List of design objects collected from the model.
         @param pil_image: Input PIL image
         """
-        extract_properties = ExtractProperties()
+        collect_properties = CollectProperties(pil_image)
         for design_object in design_objects:
-            xmin = design_object.get("xmin")
-            ymin = design_object.get("ymin")
-            xmax = design_object.get("xmax")
-            ymax = design_object.get("ymax")
-
-            design_object["horizontal_alignment"] = extract_properties.get_alignment(
-                    image=pil_image, xmin=float(xmin), xmax=float(xmax))
-            design_object["data"] = extract_properties.get_text(
-                    image=pil_image, coords=(xmin, ymin, xmax, ymax))
-
-            if design_object.get("object") == "actionset":
-                design_object["style"] = extract_properties.get_actionset_type(
-                                image=pil_image, coords=(xmin, ymin, xmax, ymax))
-            if design_object.get("object") == "textbox":
-                design_object["size"], design_object[
-                    "weight"] = extract_properties.get_size_and_weight(
-                        image=pil_image, coords=(xmin, ymin, xmax, ymax))
-                design_object["color"] = extract_properties.get_colors(
-                        image=pil_image, coords=(xmin, ymin, xmax, ymax))
-            if design_object.get("object") == "image":
-
-                cropped = pil_image.crop((xmin, ymin, xmax, ymax))
-                buff = BytesIO()
-                cropped.save(buff, format="PNG")
-                base64_string = base64.b64encode(
-                        buff.getvalue()).decode()
-                design_object["data"] = f'data:image/png;base64,{base64_string}'
-                img_width, img_height = cropped.size
-
-                # set the closest size label for the image object's width and
-                # height
-                size = "Auto"
-                keys = list(default_host_configs.IMAGE_SIZE.keys())
-                width_key = min(keys, key=lambda x: abs(x - img_width))
-                height_key = min(keys, key=lambda x: abs(x - img_height))
-                if width_key == height_key:
-                    size = default_host_configs.IMAGE_SIZE[width_key]
-                design_object["size"] = size
+            property_object = getattr(collect_properties, design_object.get("object"))
+            design_object.update(property_object(design_object.get("coords")))
 
     def main(self, image=None, card_format=None):
         """
@@ -144,7 +109,8 @@ class PredictCard:
         image_np = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
         # Extract the design objects from faster rcnn model
         output_dict, category_index = self.od_model.get_objects(image=image_np)
-        return self.generate_card(output_dict, image, image_np, card_format)
+        return self.generate_card(output_dict, image, image_np, card_format,
+                                  category_index)
 
     def tf_serving_main(self, bs64_img: str, tf_server: str, model_name: str,
                         card_format: str=None) -> Dict:
@@ -178,7 +144,7 @@ class PredictCard:
         return card
 
     def generate_card(self, prediction: Dict, image: Image,
-                      image_np: np.array, card_format: str):
+                      image_np: np.array, card_format: str, category_index: Dict):
         """
         From the object detection result and image, generate adaptive
         card object.
@@ -187,6 +153,8 @@ class PredictCard:
         @param image: PIL Image object to crop the regions.
         @param image_np: Array representation of the image.
         @param card_format: format specification for template data binding
+        @param category_index: category name and class id mapping from the
+                               object detection
 
         """
         # TODO: Remove the reduendant usage of image and image_np
@@ -194,14 +162,13 @@ class PredictCard:
         # Collect the objects along with its design properites
 
         json_objects, detected_coords = self.collect_objects(
-            output_dict=prediction, pil_image=image)
+            output_dict=prediction, pil_image=image, category_index= category_index)
         # Remove overlapping rcnn objects
         card_arrange = CardArrange()
         card_arrange.remove_overlapping_objects(json_object=json_objects)
 
         # get design object properties
         self.get_object_properties(json_objects["objects"], image)
-
         # Get image coordinates from custom image pipeline
         if config.USE_CUSTOM_IMAGE_PIPELINE:
             self.get_image_objects(json_objects, detected_coords, card_arrange,

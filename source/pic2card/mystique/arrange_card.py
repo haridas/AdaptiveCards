@@ -1,7 +1,6 @@
 """Module for arranging the design elements for the Card json"""
 
-from operator import itemgetter
-from typing import List, Dict, Callable
+from typing import List, Dict
 
 from .image_extraction import ImageExtraction
 from .extract_properties import ExtractProperties
@@ -9,6 +8,7 @@ from mystique import default_host_configs
 from .group_design_objects import ImageGrouping
 from .group_design_objects import ColumnsGrouping
 from .group_design_objects import ChoicesetGrouping
+from .design_objects_template import ObjectTemplate
 
 
 class CardArrange:
@@ -33,13 +33,11 @@ class CardArrange:
         positions_to_delete = []
         for i in range(len(json_object["objects"])):
             for j in range(i, len(json_object["objects"])):
-                if i < len(
-                        json_object["objects"]) and j < len(
-                        json_object["objects"]) and i != j:
-                    coordsi = json_object["objects"][i].get("coords")
-                    coordsj = json_object["objects"][j].get("coords")
-                    box1 = [float(c) for c in coordsi.split(",")]
-                    box2 = [float(c) for c in coordsj.split(",")]
+                if len(
+                        json_object["objects"]) > i != j < len(
+                        json_object["objects"]):
+                    box1 = json_object["objects"][i].get("coords")
+                    box2 = json_object["objects"][j].get("coords")
                     intersection = image_extraction.find_points(box1, box2)
                     object_i = json_object["objects"][i]
                     object_j = json_object["objects"][j]
@@ -131,83 +129,23 @@ class CardArrange:
                 return i
         return -1
 
-    def append_objects(self, design_object: Dict, body: List[Dict], ymins=None,
-                       is_column=None):
+    def append_objects(self, design_object: Dict, body: List[Dict],
+                       ymins=None) -> None:
         """
         Appends the individaul design elements to card body
 
         @param design_object: design element to append
         @param body: list of design elements
         @param ymins: list of ymin of design elements
-        @param is_column: boolean flag to determine
-                                          a column element
         """
-        objects_appending_map = {
-                "image": {
-                        "type": "Image",
-                        "altText": "Image",
-                        "horizontalAlignment": design_object.
-                            get("horizontal_alignment", ""),
-                        "size": design_object.get("size"),
-                        "url": design_object.get("data"),
-                },
-                "actionset": {
-                        "type": "ActionSet",
-                        # "separator": "true", # Issue in data binding if
-						#                        separator is set to True
-                        "actions": [{
-                                "type": "Action.Submit",
-                                "title": design_object.get("data"),
-                                "style": design_object.get("style"),
-                        }],
-                        "spacing": "Medium"
-                },
-                "checkbox": {
-                        "type": "Input.Toggle",
-                        "title": design_object.get("data", ""),
-                        "coords": design_object.get("coords")
-                },
-                "richtextbox": {
-                        "type": "RichTextBlock",
-                        "inlines": [{
-                                "type": "TextRun",
-                                "text": design_object.get("data", ""),
-                                "size": design_object.get("size", ""),
-                                "horizontalAlignment": design_object.
-                                    get("horizontal_alignment", ""),
-                                "color": design_object.get("color", "Default"),
-                                "weight": design_object.get("weight", ""),
-                        }]},
-                "textbox": {
-                        "type": "TextBlock",
-                        "text": design_object.get("data", ""),
-                        "size": design_object.get("size", ""),
-                        "horizontalAlignment": design_object.
-                            get("horizontal_alignment", ""),
-                        "color": design_object.get("color", "Default"),
-                        "weight": design_object.get("weight", ""),
-                        "wrap": "true",
-                },
-                "radiobutton": {
-                        "title": design_object.get("data", ""),
-                        "value": "",
-                }
-        }
-        if design_object.get("object") == "textbox":
-            if (len(design_object.get("data", "").split()) >= 11
-                and not is_column) or (is_column and len(
-                    design_object.get("data", "").split()) >= 5):
-                body.append(objects_appending_map["richtextbox"])
-            else:
-                body.append(objects_appending_map[design_object.get("object")])
-        else:
-            body.append(objects_appending_map[design_object.get("object")])
-
+        object_template = ObjectTemplate(design_object)
+        template_object=getattr(object_template, design_object.get("object"))
+        body.append(template_object())
         if ymins is not None:
             ymins.append(design_object.get("ymin"))
 
     def set_column_width(self, column_number: int, columns: List[Dict],
-                         column_set: Dict):
+                         column_set: Dict) -> None:
         """
         Set Column width property
 
@@ -230,7 +168,7 @@ class CardArrange:
             column_set["columns"][column_number]["width"] = "auto"
 
     def add_column_objects(self, columns: List[Dict], radio_buttons_dict: Dict,
-                           colummn_set: Dict):
+                           colummn_set: Dict) -> [List, List, int]:
         """
         Adds the grouped columns into the columnset [ individual objects and
         choicesets ]
@@ -265,7 +203,7 @@ class CardArrange:
                 else:
                     self.append_objects(
                             design_object, colummn_set["columns"][ctr].get(
-                                    "items", []), is_column=True)
+                                    "items", []))
                     if not column_flag:
                         column_xmin.append(design_object.get("xmin"))
                         column_flag = True
@@ -284,7 +222,8 @@ class CardArrange:
         return image_objects_columns, column_xmin, ctr
 
     def arrange_columns(self, columns: List[Dict], radio_buttons_dict: Dict,
-                        body: List[Dict], ymins: List, group: List[Dict]):
+                        body: List[Dict], ymins: List,
+                        group: List[Dict]) -> None:
         """
         Identifies imagesets and arrange the columnset in the card json body
 
@@ -321,9 +260,7 @@ class CardArrange:
                 })
                 ctr = ctr + 1
                 self.append_objects(item,
-                                    colummn_set["columns"][ctr].get("items",
-                                                                    []),
-                                    is_column=True)
+                                    colummn_set["columns"][ctr].get("items",[]))
                 column_xmin.append(item.get("xmin"))
 
         delete_positions = []
