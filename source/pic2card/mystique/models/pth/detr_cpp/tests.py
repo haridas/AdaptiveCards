@@ -1,13 +1,18 @@
+import os
 import detr
 import numpy as np
 from PIL import Image
 import unittest
 
+curr_dir = os.path.dirname(__file__)
+
 
 class TestDetrLib(unittest.TestCase):
     def setUp(self):
-        self.model_path = "/mnt1/haridas/projects/pic2card-models/pytorch/detr_trace.pt"
-        self.image_path = "/home/haridas/projects/mystique/data/templates_test_data/1.png"
+        self.model_path = os.path.join(
+            curr_dir, "../../../../model/pth_models/detr_trace.pt")
+        self.image_path = os.path.join(
+            curr_dir, "../../../../tests/test_images/test01.png")
         img = Image.open(self.image_path)
         self.img_np = np.asarray(img)
 

@@ -1,5 +1,5 @@
 import os
-from setuptools import setup, Extension
+from setuptools import setup
 from torch.utils import cpp_extension
 
 os.environ["CXX"] = "g++-8"
