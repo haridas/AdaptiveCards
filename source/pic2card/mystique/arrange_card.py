@@ -327,7 +327,6 @@ class CardArrange:
         """
         image_grouping = ImageGrouping(self)
         collect_properties = CollectProperties()
-        extract_properties = ExtractProperties()
         colummn_set = {
                 "type": "ColumnSet",
                 "columns": []
