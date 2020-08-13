@@ -15,8 +15,7 @@ FONT_SIZE = {
 }
 
 FONT_WEIGHT = {
-    "small": 5,
-    "medium": 6.5,
-    "large": 8,
-    "extralarge": 9
+    "lighter": 3,
+    "default": 9,
+    "bolder": 14
 }

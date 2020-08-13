@@ -7,6 +7,7 @@ from io import BytesIO
 from typing import Tuple, Dict
 
 import cv2
+import re
 import numpy as np
 from PIL import Image
 from mystique import default_host_configs
@@ -118,13 +119,10 @@ class ExtractProperties:
             if len(img_data['text'][i]) > 1:  # to ignore img with wrong bbox
                 (_, _, w, h) = (img_data['left'][i], img_data['top'][i],
                                 img_data['width'][i], img_data['height'][i])
-                excess_pixel_letters = ["y", "g", "j", "p", "q"]
-                for letter in excess_pixel_letters:
-                    if letter in img_data['text'][i]:
-                        h -= 2
-                        break
                 # Reducing pixels if there are Capital letters
-                if img_data['text'][i][0].isupper():
+                extra_pixel_char = r"y|g|j|p|q"
+                match = re.search(extra_pixel_char, img_data['text'][i])
+                if (match or img_data['text'][i][0].isupper()):
                     h -= 2
                 # Mean of the width bounding box results in character width
                 w = w//len(img_data['text'][i])
@@ -133,7 +131,7 @@ class ExtractProperties:
         font_size = default_host_configs.FONT_SIZE
         font_weight = default_host_configs.FONT_WEIGHT
 
-        # TODO: Handling of words that arent getting dectected by tessaract
+        # Handling of unrecognized characters
         if len(box_height) == 0:
             heights_ratio = font_size['default']  # making to default
             weights = font_weight['default']
@@ -155,16 +153,10 @@ class ExtractProperties:
         else:
             size = "Default"
 
-        # TODO: Better Weights classification using clustering
-        if size == "Small" and weights >= font_weight['small']:
-            weight = "Bolder"
-        elif size == "Default" and weights >= font_weight['small']:
-            weight = "Bolder"
-        elif size == "Medium" and weights > font_weight['default']:
-            weight = "Bolder"
-        elif size == "Large" and weights > font_weight['large']:
-            weight = "Bolder"
-        elif size == "ExtraLarge" and weights > font_weight['extralarge']:
+        # TODO: Fine tune weights threshold
+        if font_weight['lighter'] > weights:
+            weight = "lighter"
+        elif font_weight['bolder'] < weights:
             weight = "Bolder"
         else:
             weight = "Default"
