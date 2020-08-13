@@ -136,13 +136,11 @@ class ExtractProperties:
         # TODO: Handling of words that arent getting dectected by tessaract
         if len(box_height) == 0:
             heights_ratio = font_size['default']  # making to default
-            weight = font_weight['default']
+            weights = font_weight['default']
         else:
             heights = int(np.mean(box_height))
             heights_ratio = round((heights/image_height), 4)
-            weight = int(np.mean(box_width))
-
-        weights = "Default"
+            weights = int(np.mean(box_width))
 
         if font_size['small'] < heights_ratio < font_size['default']:
             size = "Small"
@@ -158,18 +156,20 @@ class ExtractProperties:
             size = "Default"
 
         # TODO: Better Weights classification using clustering
-        if size == "Small" and weight >= font_weight['small']:
-            weights = "Bolder"
-        elif size == "Default" and weight >= font_weight['small']:
-            weights = "Bolder"
-        elif size == "Medium" and weight > font_weight['default']:
-            weights = "Bolder"
-        elif size == "Large" and weight > font_weight['large']:
-            weights = "Bolder"
-        elif size == "ExtraLarge" and weight > font_weight['extralarge']:
-            weights = "Bolder"
+        if size == "Small" and weights >= font_weight['small']:
+            weight = "Bolder"
+        elif size == "Default" and weights >= font_weight['small']:
+            weight = "Bolder"
+        elif size == "Medium" and weights > font_weight['default']:
+            weight = "Bolder"
+        elif size == "Large" and weights > font_weight['large']:
+            weight = "Bolder"
+        elif size == "ExtraLarge" and weights > font_weight['extralarge']:
+            weight = "Bolder"
+        else:
+            weight = "Default"
 
-        return size, weights
+        return size, weight
 
     def get_alignment(self, image=None, xmin=None, xmax=None):
         """
