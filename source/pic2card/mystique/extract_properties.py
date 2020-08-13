@@ -284,13 +284,10 @@ class ExtractProperties:
         @param column_number: the position of the column
         """
         keys = list(default_config.keys())
-        keys = [tuple([float(k) for k in key.split(",")]) for key in
-                keys]
         distances = [np.sqrt(np.sum(((np.asarray(ratio) -
                                       np.asarray(tuple(point))) ** 2)))
                      for point in keys]
         key = keys[distances.index(min(distances))]
-        key = ",".join([str(k) for k in key])
         column_set["columns"][column_number]["width"] = default_config[key]
 
     def extract_column_width(self, column_set: Dict,
@@ -351,14 +348,11 @@ class ExtractProperties:
             # select the image size based on the minimum distance with
             # the default host config values for image size
             keys = list(config.IMAGE_SIZE_RATIOS.keys())
-            keys = [tuple([float(k) for k in key.split(",")]) for key in
-                    keys]
             ratio = (width_ratio, height_ratio)
             distances = [np.sqrt(np.sum(((np.asarray(ratio) -
                                           np.asarray(tuple(point))) ** 2)))
                          for point in keys]
             key = keys[distances.index(min(distances))]
-            key = ",".join([str(k) for k in key])
             return config.IMAGE_SIZE_RATIOS[key]
 
 
