@@ -7,11 +7,11 @@ from io import BytesIO
 from typing import Tuple, Dict
 
 import cv2
-import re
 import numpy as np
 from PIL import Image
-from mystique import default_host_configs
 from pytesseract import pytesseract, Output
+from mystique import default_host_configs
+# from mystique.utils import text_size_processing
 
 
 class ExtractProperties:
@@ -24,6 +24,9 @@ class ExtractProperties:
                               color
     from image objects - extracts image size
     """
+
+    def __init__(self):
+        self.tesseract = pytesseract
 
     def get_actionset_type(self, image=None, coords=None):
         """
@@ -92,7 +95,7 @@ class ExtractProperties:
         cropped_image = cropped_image.resize((w * 10, h * 10),
                                              Image.ANTIALIAS)
 
-        return pytesseract.image_to_string(
+        return self.tesseract.image_to_string(
             cropped_image, lang="eng", config="--psm 6")
 
     def get_size_and_weight(self, image=None, coords=None):
@@ -111,7 +114,7 @@ class ExtractProperties:
         img = np.asarray(cropped_image)
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         # edge detection
-        img_data = pytesseract.image_to_data(img, output_type=Output.DICT)
+        img_data = self.tesseract.image_to_data(img, output_type=Output.DICT)
         box_height = []
         box_width = []
         n_boxes = len(img_data['level'])
@@ -119,13 +122,8 @@ class ExtractProperties:
             if len(img_data['text'][i]) > 1:  # to ignore img with wrong bbox
                 (_, _, w, h) = (img_data['left'][i], img_data['top'][i],
                                 img_data['width'][i], img_data['height'][i])
-                # Reducing pixels if there are Capital letters
-                extra_pixel_char = r"y|g|j|p|q"
-                match = re.search(extra_pixel_char, img_data['text'][i])
-                if (match or img_data['text'][i][0].isupper()):
-                    h -= 2
-                # Mean of the width bounding box results in character width
-                w = w//len(img_data['text'][i])
+                # h = text_size_processing(img_data['text'][i], h)
+                w = w/len(img_data['text'][i])  # Approximate character width
                 box_height.append(h)
                 box_width.append(w)
         font_size = default_host_configs.FONT_SIZE
@@ -133,7 +131,7 @@ class ExtractProperties:
 
         # Handling of unrecognized characters
         if len(box_height) == 0:
-            heights_ratio = font_size['default']  # making to default
+            heights_ratio = font_size['default']
             weights = font_weight['default']
         else:
             heights = int(np.mean(box_height))
@@ -291,6 +289,7 @@ class CollectProperties(ExtractProperties):
     """
 
     def __init__(self, image=None):
+        super().__init__()
         self.pil_imgae = image
 
     def column(self, columns: Dict):
