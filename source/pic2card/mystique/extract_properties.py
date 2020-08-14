@@ -132,11 +132,12 @@ class ExtractProperties:
         # Handling of unrecognized characters
         if len(box_height) == 0:
             heights_ratio = font_size['default']
-            weights = font_weight['default']
+            weights_ratio = font_weight['default']
         else:
             heights = int(np.mean(box_height))
             heights_ratio = round((heights/image_height), 4)
             weights = int(np.mean(box_width))
+            weights_ratio = round((weights/image_width), 4)
 
         if font_size['small'] < heights_ratio < font_size['default']:
             size = "Small"
@@ -152,9 +153,9 @@ class ExtractProperties:
             size = "Default"
 
         # TODO: Fine tune weights threshold
-        if font_weight['lighter'] > weights:
+        if font_weight['lighter'] > weights_ratio:
             weight = "lighter"
-        elif font_weight['bolder'] < weights:
+        elif font_weight['bolder'] < weights_ratio:
             weight = "Bolder"
         else:
             weight = "Default"
