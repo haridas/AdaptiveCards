@@ -110,7 +110,6 @@ class ExtractProperties:
         cropped_image = image.crop(coords)
         image_width, image_height = image.size
         img = np.asarray(cropped_image)
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         # edge detection
         img_data = self.tesseract.image_to_data(img, output_type=Output.DICT)
         box_height = []
