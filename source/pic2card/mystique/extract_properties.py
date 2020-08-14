@@ -152,7 +152,7 @@ class ExtractProperties:
 
         # TODO: Fine tune weights threshold
         if font_weight['lighter'] > weights_ratio:
-            weight = "lighter"
+            weight = "Lighter"
         elif font_weight['bolder'] < weights_ratio:
             weight = "Bolder"
         else:
