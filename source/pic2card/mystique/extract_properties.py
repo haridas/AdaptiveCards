@@ -23,9 +23,6 @@ class ExtractProperties:
     from image objects - extracts image size
     """
 
-    def __init__(self):
-        self.tesseract = pytesseract
-
     def get_actionset_type(self, image=None, coords=None):
         """
         Returns the actionset style by finding the
@@ -93,7 +90,7 @@ class ExtractProperties:
         cropped_image = cropped_image.resize((w * 10, h * 10),
                                              Image.ANTIALIAS)
 
-        return self.tesseract.image_to_string(
+        return pytesseract.image_to_string(
             cropped_image, lang="eng", config="--psm 6")
 
     def get_size_and_weight(self, image=None, coords=None):
@@ -111,7 +108,7 @@ class ExtractProperties:
         image_width, image_height = image.size
         img = np.asarray(cropped_image)
         # edge detection
-        img_data = self.tesseract.image_to_data(img, output_type=Output.DICT)
+        img_data = pytesseract.image_to_data(img, output_type=Output.DICT)
         box_height = []
         box_width = []
         n_boxes = len(img_data['level'])
@@ -287,7 +284,6 @@ class CollectProperties(ExtractProperties):
     """
 
     def __init__(self, image=None):
-        super().__init__()
         self.pil_imgae = image
 
     def column(self, columns: Dict):
