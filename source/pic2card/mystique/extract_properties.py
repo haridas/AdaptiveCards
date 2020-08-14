@@ -23,6 +23,9 @@ class ExtractProperties:
     from image objects - extracts image size
     """
 
+    def __init__(self):
+        self.tesseract = pytesseract
+
     def get_actionset_type(self, image=None, coords=None):
         """
         Returns the actionset style by finding the
@@ -73,7 +76,7 @@ class ExtractProperties:
             style = found_colors[index]
         return style
 
-    def get_text_properties(self, image=None, coords=None, is_textbox=False):
+    def get_text(self, image=None, coords=None):
         """
         Extract the text from the object coordinates
         in the input deisgn image using pytesseract.
@@ -90,18 +93,10 @@ class ExtractProperties:
         cropped_image = cropped_image.resize((w * 10, h * 10),
                                              Image.ANTIALIAS)
 
-        pre_text = pytesseract.image_to_data(cropped_image,
-                                             output_type=Output.DICT)
-        test_list = ' '.join(pre_text['text']).split()
-        text = ' '.join(test_list)
-        size, weight = self.extract_size_and_weight(size=(w, h),
-                                                    img_data=pre_text)
+        return self.tesseract.image_to_string(
+            cropped_image, lang="eng", config="--psm 6")
 
-        if not is_textbox:
-            return text
-        return text, size, weight
-
-    def extract_size_and_weight(self, size=None, img_data=None):
+    def get_size_and_weight(self, image=None, coords=None):
         """
         Extract the size and weight of textual contents from
         the input image by taking an average of each edge
@@ -112,8 +107,12 @@ class ExtractProperties:
                        text and height should be extracted
         @return: size and weight
         """
-        # cropped_image = image.crop(coords)
-        image_width, image_height = size
+        cropped_image = image.crop(coords)
+        image_width, image_height = image.size
+        img = np.asarray(cropped_image)
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        # edge detection
+        img_data = self.tesseract.image_to_data(img, output_type=Output.DICT)
         box_height = []
         box_width = []
         n_boxes = len(img_data['level'])
@@ -153,7 +152,7 @@ class ExtractProperties:
 
         # TODO: Fine tune weights threshold
         if font_weight['lighter'] > weights_ratio:
-            weight = "Lighter"
+            weight = "lighter"
         elif font_weight['bolder'] < weights_ratio:
             weight = "Bolder"
         else:
@@ -289,6 +288,7 @@ class CollectProperties(ExtractProperties):
     """
 
     def __init__(self, image=None):
+        super().__init__()
         self.pil_imgae = image
 
     def column(self, columns: Dict):
@@ -327,8 +327,7 @@ class CollectProperties(ExtractProperties):
                 xmin=coords[0],
                 xmax=coords[2]
             ),
-            "data": self.get_text_properties(image=self.pil_imgae,
-                                             coords=coords),
+            "data": self.get_text(image=self.pil_imgae, coords=coords),
             "style": self.get_actionset_type(
                 image=self.pil_imgae,
                 coords=coords
@@ -340,16 +339,15 @@ class CollectProperties(ExtractProperties):
         Returns the textbox properties of the extracted design object
         @return: property object
         """
-        text, size, weight = self.get_text_properties(image=self.pil_imgae,
-                                                      coords=coords,
-                                                      is_textbox=True)
+        size, weight = self.get_size_and_weight(image=self.pil_imgae,
+                                                coords=coords)
         return {
             "horizontal_alignment": self.get_alignment(
                 image=self.pil_imgae,
                 xmin=coords[0],
                 xmax=coords[2]
             ),
-            "data": text,
+            "data": self.get_text(image=self.pil_imgae, coords=coords),
             "size": size,
             "weight": weight,
             "color": self.get_colors(image=self.pil_imgae, coords=coords)
@@ -367,8 +365,7 @@ class CollectProperties(ExtractProperties):
                 xmin=coords[0],
                 xmax=coords[2]
             ),
-            "data": self.get_text_properties(image=self.pil_imgae,
-                                             coords=coords),
+            "data": self.get_text(image=self.pil_imgae, coords=coords),
         }
 
     def checkbox(self, coords: Tuple) -> Dict:
@@ -382,8 +379,7 @@ class CollectProperties(ExtractProperties):
                 xmin=coords[0],
                 xmax=coords[2]
             ),
-            "data": self.get_text_properties(image=self.pil_imgae,
-                                             coords=coords),
+            "data": self.get_text(image=self.pil_imgae, coords=coords),
         }
 
     def image(self, coords: Tuple) -> Dict:
