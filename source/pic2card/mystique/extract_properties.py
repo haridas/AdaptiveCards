@@ -5,8 +5,6 @@ import math
 import operator
 from io import BytesIO
 from typing import Tuple, Dict
-
-import cv2
 import numpy as np
 from PIL import Image
 from pytesseract import pytesseract, Output
