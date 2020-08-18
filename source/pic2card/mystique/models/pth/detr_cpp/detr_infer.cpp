@@ -7,7 +7,6 @@
 #include <torch/script.h>
 #include <torch/torch.h>
 
-
 // using namespace std;
 // using namespace cv;
 
@@ -34,8 +33,8 @@ int main(int argc, const char *argv[])
         //std::cout << "Image: " << image.size();
 
         //auto input_tensor = torch::from_blob(image.data, {1, 500, 600, 3});
-        torch::Tensor input_tensor = torch::from_blob(image.data, { 1, imsize.width, imsize.height, 3 });
-        input_tensor = input_tensor.permute({ 0, 3, 1, 2 });
+        torch::Tensor input_tensor = torch::from_blob(image.data, {1, imsize.width, imsize.height, 3});
+        input_tensor = input_tensor.permute({0, 3, 1, 2});
         //std::cout << "Tensor: " << input_tensor[0][0].sizes();
         // Apply normalization based on imagenet data.
         input_tensor[0][0] = input_tensor[0][0].sub_(0.485).div_(0.229);
@@ -55,9 +54,9 @@ int main(int argc, const char *argv[])
 
         //std::cout << "PredLogits: " << outDict.at("pred_logits") << " pred Boxes: " << outDict.at("pred_boxes") << std::endl;
         torch::Tensor predLogits = outDict.at("pred_logits")
-            .toTensor()
-            .squeeze()
-            .softmax(-1);
+                                       .toTensor()
+                                       .squeeze()
+                                       .softmax(-1);
         predLogits = predLogits.narrow(1, 0, predLogits.size(1) - 1);
 
         torch::Tensor predBoxes = outDict.at("pred_boxes").toTensor().squeeze();
@@ -72,7 +71,7 @@ int main(int argc, const char *argv[])
         predLogits = predLogits.index_select(0, mask);
         // auto keep = predBoxes.max(-1) > 0.8;
         //std::vector<torch::Tensor> test = predLogits.toTensor();
-    std::cout << predLogits;
+        std::cout << predLogits;
     }
     catch (const c10::Error &e)
     {
