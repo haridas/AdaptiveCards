@@ -14,7 +14,10 @@ struct Detr
     std::string model_path;
     torch::jit::script::Module model;
 
-    Detr(const std::string &model_path) : model_path(model_path) {}
+    Detr(const std::string &model_path) : model_path(model_path)
+    {
+        loadModel();
+    }
 
     const std::string &getModelPath()
     {

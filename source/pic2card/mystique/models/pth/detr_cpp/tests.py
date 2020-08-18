@@ -30,7 +30,6 @@ class TestDetrLib(unittest.TestCase):
 
     def test_model_inference(self):
         model = detr.Detr(self.model_path)
-        model.load()
         pred_logits, pred_boxes = model.predict(self.img_np)
 
         self.assertEqual(pred_logits.shape, (60, 7))
