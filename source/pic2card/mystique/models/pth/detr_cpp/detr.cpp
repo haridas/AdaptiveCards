@@ -136,7 +136,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
         .def(py::init<const std::string &>())
         .def("get_model_path", &Detr::getModelPath)
         .def_readonly("model_path", &Detr::model_path)
-        .def("load", &Detr::loadModel)
+        // .def("load", &Detr::loadModel)
         .def("get_new_size", &Detr::getNewSize)
         .def("predict", &Detr::predict)
         .def_readonly("model", &Detr::model);
