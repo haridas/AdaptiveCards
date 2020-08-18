@@ -103,13 +103,13 @@ def plot_results(pil_img: Image,
                                                          COLORS * 100):
 
         ax.add_patch(plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
-                                   fill=False, color=c, linewidth=3))
+                                   fill=False, color=c, linewidth=1))
         text = f'{label_map[cl_id]}: {score:0.2f}'
-        ax.text(xmin, ymin, text, fontsize=15,
+        ax.text(xmin, ymin, text, fontsize=8,
                 bbox=dict(facecolor='yellow', alpha=0.5))
 
     img_buf = io.BytesIO()
-    pil_img.save(img_buf, format="png", bbox_inches='tight', pad_inches=0)
+    plt.savefig(img_buf, format="png", bbox_inches='tight', pad_inches=0)
     img_buf.seek(0)
     plt.close()
     return img_buf
