@@ -87,8 +87,8 @@ def plot_results(pil_img: Image,
     `Image.open` to render the image.
     """
     label_map = label_map or config.ID_TO_LABEL
-    #plt.figure(figsize=(16, 10))
     plt.imshow(pil_img)
+    plt.margins(0, 0)
     plt.axis('off')
     ax = plt.gca()
 
@@ -109,10 +109,9 @@ def plot_results(pil_img: Image,
                 bbox=dict(facecolor='yellow', alpha=0.5))
 
     img_buf = io.BytesIO()
-    #plt.savefig(img_buf, format="png")
-    #pil_img.save(img_buf, format="png")
-    #plt.savefig("./test.png")
+    pil_img.save(img_buf, format="png", bbox_inches='tight', pad_inches=0)
     img_buf.seek(0)
+    plt.close()
     return img_buf
 
 
