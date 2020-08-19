@@ -37,7 +37,6 @@ class TestDetrLib(unittest.TestCase):
 
     def test_image_resizing(self):
         model = detr.Detr(self.model_path)
-        
         self.assertEqual(
             model.get_new_size(400, 300, 800, 1333),
             [800, 600])
@@ -53,5 +52,3 @@ class TestDetrLib(unittest.TestCase):
         self.assertEqual(
             model.get_new_size(1500, 1500, 800, 1333),
             [800, 800])
-
-        
