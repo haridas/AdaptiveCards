@@ -7,7 +7,6 @@ import io
 import cv2
 from PIL import Image
 import numpy as np
-from object_detection.utils import visualization_utils as vis_util
 import matplotlib.pyplot as plt
 
 from mystique.predict_card import PredictCard
@@ -40,6 +39,9 @@ class Debug:
         @param scores: rcnn model's list of object scores
         @param category_index: a dict that maps integer ids to category dicts
         """
+        # TODO: Deprecate this method.
+        from object_detection.utils import visualization_utils as vis_util
+
         boxes = boxes[:, [1, 0, 3, 2]]
         vis_util.visualize_boxes_and_labels_on_image_array(
             image_np,
