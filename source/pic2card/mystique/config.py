@@ -47,7 +47,7 @@ ID_TO_LABEL = {
 # On True [ uses custom image pipeline for image objects]
 # On False [ uses RCNN model image obejcts ]
 # Default is False
-USE_CUSTOM_IMAGE_PIPELINE = False
+# USE_CUSTOM_IMAGE_PIPELINE = False
 
 # RCNN model confidence score cutoff
 MODEL_CONFIDENCE = 90.0

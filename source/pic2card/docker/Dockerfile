@@ -13,19 +13,19 @@
 # To build docker image with TFS support
 #   $docker build -t imaginea.azurecr.io/imaginea/api_tfs_mystique:v0.6 .
 #
-# To build docker with embedded model
-#   $docker build --build-args tfs_enable= --build-arg TARGET_API=frozen_grap \
+# To build pic2card with backend TFS service.
+#   $docker build --build-args tfs_enable=tfs --build-arg TARGET_API=tfs \
 #      -t imaginea.azurecr.io/imaginea/api_frozen_mystique:v0.6 .
 #
-ARG TARGET_API=tfs
-FROM python:3.6.9-slim-buster as tfs
-ADD requirements.txt /app/requirements.txt
+ARG TARGET_API=frozen_graph
+FROM python:3.7.9-slim-buster as tfs
+ADD requirements/requirements.txt /app/requirements.txt
 
 
-FROM python:3.6.9-slim-buster as frozen_graph
+FROM python:3.7.9-slim-buster as frozen_graph
 # Fill in both, as in this case we need both dependencies.
-ADD requirements-frozen_graph.txt /app/
-ADD requirements.txt /app/
+ADD requirements/requirements-frozen_graph.txt /app/
+ADD requirements/requirements.txt /app/
 RUN cat /app/requirements-frozen_graph.txt >> /app/requirements.txt
 COPY model/frozen_inference_graph.pb /app/model/
 
@@ -35,11 +35,11 @@ COPY app /app/app
 COPY mystique /app/mystique
 
 
-FROM python:3.6.9-slim-buster
+FROM python:3.7.9-slim-buster
 
 # build args scoped inside current from block
 # When building for frozen model disable it.
-ARG tfs_enable=True
+ARG tfs_enable=
 
 ENV ENABLE_TF_SERVING=$tfs_enable
 ENV TF_SERVING_URL=http://172.17.0.5:8501 \
@@ -50,7 +50,7 @@ WORKDIR /app
 
 RUN pip install --upgrade pip && \
     apt-get update && \
-    apt-get install -y --no-install-recommends libsm6 tesseract-ocr && \
+    apt-get install -y --no-install-recommends libsm6 tesseract-ocr gcc && \
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/*
 

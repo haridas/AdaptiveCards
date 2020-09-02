@@ -1,7 +1,7 @@
 # Docker Image with detr model loaded.
 #
 FROM python:3.8.5-alpine3.12 as base
-ADD requirements.txt /app/requirements.txt
+ADD requirements/requirements.txt /app/requirements.txt
 ADD requirements/torch-cpu.txt /app/torch-cpu.txt
 RUN cat /app/torch-cpu.txt >> /app/requirements.txt
 COPY model/pth_models/detr_trace.pt /app/model/pth_models/
@@ -31,5 +31,5 @@ RUN pip install -r requirements.txt && \
           "$@"' >> /usr/local/bin/entrypoint.sh &&\
     chmod +x /usr/local/bin/entrypoint.sh
 
-#EXPOSE $PORT
-#ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+EXPOSE $PORT
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
