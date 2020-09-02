@@ -157,9 +157,10 @@ class PredictCard:
         # get design object properties
         self.get_object_properties(json_objects["objects"], image)
         # Get image coordinates from custom image pipeline
-        if config.USE_CUSTOM_IMAGE_PIPELINE:
-            self.get_image_objects(json_objects, detected_coords, card_arrange,
-                                   image_np, image)
+        # if config.USE_CUSTOM_IMAGE_PIPELINE:
+        #     self.get_image_objects(json_objects, detected_coords,
+        #     card_arrange, image_np, image)
+
         # Arrange the design elements
         return_dict = {}.fromkeys(["card_json"], "")
         card_json = {

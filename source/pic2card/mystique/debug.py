@@ -26,35 +26,6 @@ class Debug:
         """
         self.od_model = od_model
 
-    def visualize_rcnn_model_objects(self, image_np: np.array,
-                                     boxes: List, classes: List,
-                                     scores: List, category_index: List):
-        """
-        Visualzie the RCNN model detected objects
-
-        @param image_np: opencv input image
-        @param boxes: rcnn model's list of object boundary boxes
-        @param classes: rcnn model's list of object classes
-        @param scores: rcnn model's list of object scores
-        @param category_index: a dict that maps integer ids to category dicts
-        """
-        # TODO: Deprecate this method.
-        from object_detection.utils import visualization_utils as vis_util
-
-        boxes = boxes[:, [1, 0, 3, 2]]
-        vis_util.visualize_boxes_and_labels_on_image_array(
-            image_np,
-            boxes,
-            classes,
-            scores,
-            category_index,
-            use_normalized_coordinates=False,
-            line_thickness=5,
-            skip_scores=True,
-            skip_labels=True,
-            min_score_thresh=0.9
-        )
-
     def visualize_custom_image_pipeline_objects(self, image_copy: np.array,
                                                 detected_coords: List[Tuple],
                                                 image: Image,
@@ -128,30 +99,9 @@ class Debug:
         pil_image = pil_image.convert("RGB")
         image_np = np.asarray(pil_image)
         image_np = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
-        # image_copy = image_np.copy()
         (boxes, classes, scores,
          output_dict) = self.get_boundary_boxes(image_np, pil_image)
         predict_card = PredictCard(self.od_model)
-        # if config.USE_CUSTOM_IMAGE_PIPELINE:
-        #     indices = np.argwhere(classes != 5)
-        #     boxes = np.squeeze(boxes[indices], axis=1)
-        #     scores = np.squeeze(scores[indices], axis=1)
-        #     classes = np.squeeze(classes[indices], axis=1)
-        #     self.visualize_rcnn_model_objects(
-        #         image_np, boxes, classes, scores, category_index)
-        #     json_objects, detected_coords = predict_card.collect_objects(
-        #         output_dict=output_dict, pil_image=pil_image)
-        #     # delete image from the rcnn model detected coordinates
-        #     positions_to_remove = [ctr for ctr, design_object in enumerate(
-        #         json_objects.get("objects", []))
-        #         if design_object.get("object") == "image"
-        #     ]
-        #     detected_coords = [coords for ctr, coords in enumerate(
-        #         detected_coords) if ctr not in positions_to_remove]
-
-        #     self.visualize_custom_image_pipeline_objects(image_copy,
-        #                                                  detected_coords,
-        #                                                  pil_image, image_np)
 
         # Custom pipelne
         image_buffer = plot_results(pil_image, classes, scores, boxes)
