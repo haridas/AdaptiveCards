@@ -1,4 +1,4 @@
-name: pic2card-rcnn-build
+name: pic2card-build-docker-rcnn
 on:
   workflow_dispatch:
     inputs:
@@ -14,24 +14,8 @@ defaults:
   run:
     shell: bash
     working-directory: source/pic2card
-
 jobs:
-  # Run tests.
-  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Run tests
-        run: |
-          echo "Run the tests"
-
-  # Push image to GitHub Packages.
-  # See also https://docs.docker.com/docker-hub/builds/
-  push:
-    # Ensure test job passes before pushing image.
-    needs: test
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -50,15 +34,9 @@ jobs:
 
           # Change all uppercase to lowercase
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
-
-          # Strip git ref prefix from version
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-
-          # Strip "v" prefix from tag name
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-
-          # Use Docker `latest` tag convention
-          [ "$VERSION" == "main" ] && VERSION=latest
+          
+          # Use user provided version tag.
+          VERSION="${{ github.event.inputs.releaseTag }}"
 
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
