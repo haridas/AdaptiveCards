@@ -1,4 +1,4 @@
-name: pic2card-build-docker-rcnn
+name: pic2card-build-docker-detr
 on:
   workflow_dispatch:
     inputs:
