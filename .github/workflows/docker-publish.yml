@@ -1,4 +1,4 @@
-name: Build Pic2card Backend ( with rcnn model )
+name: Build Pic2card RCNN Backend
 on:
   workflow_dispatch:
     inputs:
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Build image
-        run: docker build . --file docker/Dockerfile-rcnn --tag $IMAGE_NAME
+        run: docker build . --file docker/Dockerfile --tag $IMAGE_NAME
 
       - name: Log into GitHub Container Registry
       # TODO: Create a PAT with `read:packages` and `write:packages` scopes and save it as an Actions secret `CR_PAT`
