@@ -1,4 +1,4 @@
-name: Build Pic2card RCNN Backend
+name: pic2card-rcnn-build
 on:
   workflow_dispatch:
     inputs:
