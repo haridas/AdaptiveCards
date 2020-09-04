@@ -26,6 +26,7 @@ jobs:
       
       - name: Download model into model/pth_models/detr_trace.pt
         run: |
+          mkdir -p model/pth_models
           wget "${{ github.event.inputs.modelUrl }}" --queit -O model/pth_models/detr_trace.pt
 
       - name: Build image
