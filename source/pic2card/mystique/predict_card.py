@@ -176,11 +176,11 @@ class PredictCard:
         body = [x for _, x in sorted(zip(ymins, body),
                                      key=lambda x: x[0])]
         # if format==template - generate template data json
+        return_dict["card_json"] = {}.fromkeys(["data", "card"], {})
         if card_format == "template":
             databinding = DataBinding()
             data_payload, body = databinding.build_data_binding_payload(body)
-            return_dict["card_v2_json"] = {}.fromkeys(["data", "template"], {})
-            return_dict["card_v2_json"]["data"] = data_payload
+            return_dict["card_json"]["data"] = data_payload
         # Prepare the response with error code
         error = None
         if not body or not detected_coords:
@@ -192,10 +192,9 @@ class PredictCard:
             card_json["body"] = body
 
         if card_format != "template":
-            return_dict["card_json"] = card_json
+            return_dict["card_json"]["card"] = card_json
         else:
-            return_dict["card_v2_json"]["template"] = card_json
-            return_dict["card_json"] = None
+            return_dict["card_json"]["card"] = card_json
         return_dict["error"] = error
 
         return return_dict
