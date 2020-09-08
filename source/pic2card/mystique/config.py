@@ -50,7 +50,7 @@ ID_TO_LABEL = {
 # USE_CUSTOM_IMAGE_PIPELINE = False
 
 # RCNN model confidence score cutoff
-MODEL_CONFIDENCE = 90.0
+MODEL_CONFIDENCE = 80.0
 
 # Extra textbox padding - 5px
 TEXTBOX_PADDING = 5

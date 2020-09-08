@@ -44,6 +44,7 @@ ARG tfs_enable=
 ENV ENABLE_TF_SERVING=$tfs_enable
 ENV TF_SERVING_URL=http://172.17.0.5:8501 \
     TF_SERVING_MODEL_NAME=mystique \
+    PIP_DEFAULT_TIMEOUT=1000 \
     PORT=5050
 COPY --from=build /app /app
 WORKDIR /app

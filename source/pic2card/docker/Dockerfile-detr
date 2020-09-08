@@ -14,17 +14,18 @@ COPY --from=base /app /pic2card
 WORKDIR /pic2card
 
 ENV PORT=5050 \
-    ACTIVE_MODEL_NAME=pth_detr_cpp
+    ACTIVE_MODEL_NAME=pth_detr \
+    PIP_DEFAULT_TIMEOUT=1000
 
 RUN pip install --upgrade pip && \
     apt-get update && \
-    apt-get install -y --no-install-recommends libsm6 tesseract-ocr \
-     libopencv-core-dev libopencv-imgproc-dev g++ && \
+    apt-get install -y --no-install-recommends libsm6 tesseract-ocr && \
+    # libopencv-core-dev libopencv-imgproc-dev g++ && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 RUN pip install -r requirements.txt && \
-    python mystique/models/pth/detr_cpp/setup.py install && \
+    #python mystique/models/pth/detr_cpp/setup.py install && \
     rm -rf /root/.cache/pip && \
     echo '#!/bin/bash \n\n\
           gunicorn -w 2 -b 0.0.0.0:$PORT app.api:app \
