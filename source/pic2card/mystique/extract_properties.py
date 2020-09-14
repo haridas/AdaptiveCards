@@ -9,8 +9,7 @@ from typing import Tuple, Dict, List
 import numpy as np
 from PIL import Image
 
-from mystique import config, default_host_configs
-from pytesseract import pytesseract, Output
+from mystique import config
 
 
 class ExtractProperties:
@@ -23,6 +22,7 @@ class ExtractProperties:
                               color
     from image objects - extracts image size
     """
+
     def find_iou(self, coord1, coord2, inter_object=False,
                  columns_group=False) -> List:
         """
@@ -125,91 +125,6 @@ class ExtractProperties:
             index = distances.index(min(distances))
             style = found_colors[index]
         return style
-
-    def get_text(self, image=None, coords=None):
-        """
-        Extract the text from the object coordinates
-        in the input deisgn image using pytesseract.
-        @param image: input PIL image
-        @param coords: tuple of coordinates from which
-                       text should be extracted
-        @return: ocr text
-        """
-        coords = (coords[0] - 5, coords[1], coords[2] + 5, coords[3])
-        cropped_image = image.crop(coords)
-        cropped_image = cropped_image.convert("LA")
-        w, h = cropped_image.size
-        cropped_image = cropped_image.resize((w * 10, h * 10),
-                                             Image.ANTIALIAS)
-        # Remove any mdfile false rendering issue.
-        text = pytesseract.image_to_string(
-            cropped_image,
-            lang="eng",
-            config="--psm 6").lstrip("#-_*~").strip()
-        return text
-
-    def get_size_and_weight(self, image=None, coords=None):
-        """
-        Extract the size and weight of textual contents from
-        the input image by taking an average of each edge
-        countour's of height and width of each character.
-
-        @param image : input PIL image
-        @param coords: list of coordinated from which
-                       text and height should be extracted
-        @return: size and weight
-        """
-        cropped_image = image.crop(coords)
-        image_width, image_height = image.size
-        img = np.asarray(cropped_image)
-        # edge detection
-        img_data = pytesseract.image_to_data(img, output_type=Output.DICT)
-        box_height = []
-        box_width = []
-        n_boxes = len(img_data['level'])
-        for i in range(n_boxes):
-            if len(img_data['text'][i]) > 1:  # to ignore img with wrong bbox
-                (_, _, w, h) = (img_data['left'][i], img_data['top'][i],
-                                img_data['width'][i], img_data['height'][i])
-                # h = text_size_processing(img_data['text'][i], h)
-                w = w/len(img_data['text'][i])  # Approximate character width
-                box_height.append(h)
-                box_width.append(w)
-        font_size = default_host_configs.FONT_SIZE
-        font_weight = default_host_configs.FONT_WEIGHT
-
-        # Handling of unrecognized characters
-        if len(box_height) == 0:
-            heights_ratio = font_size['default']
-            weights_ratio = font_weight['default']
-        else:
-            heights = int(np.mean(box_height))
-            heights_ratio = round((heights/image_height), 4)
-            weights = int(np.mean(box_width))
-            weights_ratio = round((weights/image_width), 4)
-
-        if font_size['small'] < heights_ratio < font_size['default']:
-            size = "Small"
-        elif font_size['default'] < heights_ratio < font_size['medium']:
-            size = "Default"
-        elif font_size['medium'] < heights_ratio < font_size['large']:
-            size = "Medium"
-        elif font_size['large'] < heights_ratio < font_size['extralarge']:
-            size = "Large"
-        elif font_size['extralarge'] < heights_ratio:
-            size = "ExtraLarge"
-        else:
-            size = "Default"
-
-        # TODO: Fine tune weights threshold
-        if font_weight['lighter'] > weights_ratio:
-            weight = "Lighter"
-        elif font_weight['bolder'] < weights_ratio:
-            weight = "Bolder"
-        else:
-            weight = "Default"
-
-        return size, weight
 
     def get_alignment(self, image=None, xmin=None, xmax=None):
         """
@@ -332,7 +247,7 @@ class ExtractProperties:
         """
         Extract the column width key from the default config which is minimum
         in distance with the given point / ratio
-        @param default_config: the default host config dict for the column width
+        @param default_config: the default host config dict for column width
         @param ratio: the point derived from the column coordinates
         @param column_set: dict of columns
         @param column_number: the position of the column
@@ -364,18 +279,19 @@ class ExtractProperties:
         for ctr, column in enumerate(column_set["columns"]):
             if ctr + 1 < len(column_set["columns"]):
                 mid_point1 = np.asarray(
-                        ((column_xmin[ctr] + column_xmax[ctr])/2,
-                         (column_ymin[ctr] + column_ymax[ctr])/2))
+                    ((column_xmin[ctr] + column_xmax[ctr])/2,
+                     (column_ymin[ctr] + column_ymax[ctr])/2))
                 mid_point2 = np.asarray(
-                        ((column_xmin_min[ctr + 1]
-                          + column_xmax_min[ctr + 1]) / 2,
-                         (column_ymin_min[ctr + 1]
-                          + column_ymax_min[ctr + 1]) / 2))
+                    ((column_xmin_min[ctr + 1]
+                      + column_xmax_min[ctr + 1]) / 2,
+                     (column_ymin_min[ctr + 1]
+                      + column_ymax_min[ctr + 1]) / 2))
 
                 a = np.asarray((column_xmin[ctr], column_ymin[ctr]))
                 b = np.asarray((column_xmax[ctr+1], column_ymax[ctr+1]))
                 end_distance = np.sqrt(np.sum(((a - b) ** 2)))
-                mid_distance = np.sqrt(np.sum(((mid_point1 - mid_point2) ** 2)))
+                mid_distance = np.sqrt(np.sum(((mid_point1 - mid_point2)
+                                               ** 2)))
                 mid_distance = (mid_distance / end_distance) * 100
                 ratio = (1, mid_distance)
                 self.get_column_width_keys(
@@ -479,7 +395,7 @@ class CollectProperties(ExtractProperties):
                 xmin=coords[0],
                 xmax=coords[2]
             ),
-            "data": self.get_text(image=self.pil_imgae, coords=coords),
+            "data": None,
             "style": self.get_actionset_type(
                 image=self.pil_imgae,
                 coords=coords
@@ -491,17 +407,15 @@ class CollectProperties(ExtractProperties):
         Returns the textbox properties of the extracted design object
         @return: property object
         """
-        size, weight = self.get_size_and_weight(image=self.pil_imgae,
-                                                coords=coords)
         return {
             "horizontal_alignment": self.get_alignment(
                 image=self.pil_imgae,
                 xmin=coords[0],
                 xmax=coords[2]
             ),
-            "data": self.get_text(image=self.pil_imgae, coords=coords),
-            "size": size,
-            "weight": weight,
+            "data": None,
+            "size": None,
+            "weight": None,
             "color": self.get_colors(image=self.pil_imgae, coords=coords)
 
         }
@@ -517,7 +431,7 @@ class CollectProperties(ExtractProperties):
                 xmin=coords[0],
                 xmax=coords[2]
             ),
-            "data": self.get_text(image=self.pil_imgae, coords=coords),
+            "data": None,
         }
 
     def checkbox(self, coords: Tuple) -> Dict:
@@ -531,7 +445,7 @@ class CollectProperties(ExtractProperties):
                 xmin=coords[0],
                 xmax=coords[2]
             ),
-            "data": self.get_text(image=self.pil_imgae, coords=coords),
+            "data": None,
         }
 
     def image(self, coords: Tuple) -> Dict:
