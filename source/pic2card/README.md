@@ -12,12 +12,12 @@ Pic2Card is a solution for converting adaptive cards GUI design image into adapt
 ![Prediction Architecture](./images/architecture.png)
 
 ## Integrated with Adaptivecard designer
-![Working Screenshot](./images/working2.png)
+![Working Screenshot](./images/working1.jpg)
 
-## Setup pic2card for yourself
+## Setup and Install pic2card 
 
 
-### 1. Setup Locally
+### Setup Locally
 
 **Install the requirements**
 
@@ -42,27 +42,19 @@ Pic2Card is a solution for converting adaptive cards GUI design image into adapt
             http://localhost:5050/predict_json
 ```
 
-**Batch process**
+**For Batch process**
 
 
 ```shell
    python -m commands.generate_card  --image_path="path/to/image"
 ```
 
-### 3. Run the pic2card service in docker container
+### Run the pic2card service in docker container
 
 You can build a docker image from the source code and play with it.
 
-Docker build supports two types of image generation,
-
-a. A single image which embed frozen model with it.
-
-b. Image which has only the service layer, the model will be consumed from the
-   tensorflow serving. Right now this part is experimental state only.
-
-By default we only need single container, which embed the model also along with
-application.
-
+By default we only need single container, which embed the model model as well as
+the pic2card application.
 
 ```bash
 
@@ -73,7 +65,7 @@ $ docker build -f docker/Dockerfile -t <username>/<container-name:tag> .
 $ docker run -it --name pic2card -p 5050:5050 <image:name:tag>
 ```
 
-### 4. Use Tensorflow Serving to deploy pic2card
+### Use Tensorflow Serving to deploy pic2card
 
 NOTE: This is an experimental feature only.
 
