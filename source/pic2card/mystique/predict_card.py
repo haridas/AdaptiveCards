@@ -12,12 +12,11 @@ from PIL import Image
 import numpy as np
 import requests
 
+from mystique import config
 from mystique.arrange_card import CardArrange
 from mystique.image_extraction import ImageExtraction
 from mystique.card_template import DataBinding
-from mystique import config
 from mystique.extract_properties import CollectProperties
-from mystique.text_extraction import CollectTextProperties
 
 
 class PredictCard:
@@ -81,21 +80,13 @@ class PredictCard:
         @param design_objects: List of design objects collected from the model.
         @param pil_image: Input PIL image
         """
-        collect_properties = CollectProperties(pil_image)
-        collect_text = CollectTextProperties(pil_image)
-        for design_object in design_objects:
-            coords = design_object['coords']
-            data, size, weight = collect_text.text_prop(pil_image, coords)
-            property_object = getattr(collect_properties,
-                                      design_object.get("object"))
-            property_element = property_object(design_object.get("coords"))
-            if property_element.get('size') is None:
-                property_element['size'] = size
-            if property_element.get('data') is None:
-                property_element['data'] = data
-            if property_element.get('weight') is None:
-                property_element['weight'] = weight
 
+        collect_prop = CollectProperties()
+        for design_object in design_objects:
+            property_object = getattr(collect_prop,
+                                      design_object.get("object"))
+            property_element = property_object(pil_image,
+                                               design_object.get("coords"))
             design_object.update(property_element)
 
     def main(self, image=None, card_format=None):
