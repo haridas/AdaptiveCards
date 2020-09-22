@@ -14,12 +14,6 @@ FONT_SIZE = {
 }
 
 FONT_WEIGHT = {
-    "lighter": 0.0143,
-    "default": 0.0176,
-    "bolder": 0.0213
-}
-
-FONT_WEIGHT_THICK = {
     "lighter": 2.35,
     "default": 2.75,
     "bolder": 3.25
